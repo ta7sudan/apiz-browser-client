@@ -1,0 +1,76 @@
+{
+  "name": "apiz-browser-client",
+  "version": "0.1.0",
+  "description": "Browser client for apiz",
+  "main": "dist/apizclient.umd.js",
+  "module": "dist/apizclient.esm.js",
+  "browser": "dist/apizclient.umd.js",
+  "sideEffects": false,
+  "types": "types/index.d.ts",
+  "typings": "types/index.d.ts",
+  "scripts": {
+    "build": "rollup -c",
+    "prebuild": "rimraf dist",
+    "build-dev": "rollup -c rollup.dev.js",
+    "lint": "eslint src",
+    "format": "prettier --config .prettierrc.js --write src/**/*.js test/**/*.js",
+    "inspect": "jsinspect src",
+    "prepare": "npm test && npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ta7sudan/apiz-browser-client.git"
+  },
+  "keywords": [
+    "client",
+    "apiz",
+    "browser"
+  ],
+  "author": "ta7sudan",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ta7sudan/apiz-browser-client/issues"
+  },
+  "files": [
+    "src",
+    "dist",
+    "example",
+    "types"
+  ],
+  "lint-staged": {
+    "*.js": [
+      "eslint"
+    ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged && npm run build && git add .",
+      "pre-push": "npm test"
+    }
+  },
+  "homepage": "https://github.com/ta7sudan/apiz-browser-client#readme",
+  "browserslist": [
+    "last 2 iOS major versions"
+  ],
+  "devDependencies": {
+    "@babel/core": "^7.1.2",
+    "@babel/polyfill": "^7.0.0",
+    "@babel/preset-env": "^7.1.0",
+    "@babel/register": "^7.0.0",
+    "babel-plugin-array-includes": "^2.0.3",
+    "eslint": "^5.7.0",
+    "eslint-plugin-prettier": "^3.0.0",
+    "husky": "^1.1.2",
+    "jsinspect": "^0.12.7",
+    "lint-staged": "^7.3.0",
+    "prettier": "^1.14.3",
+    "rimraf": "^2.6.2",
+    "rollup": "^0.66.6",
+    "rollup-plugin-babel": "^4.0.3",
+    "rollup-plugin-babel-minify": "^6.1.1",
+    "rollup-plugin-node-resolve": "^3.4.0",
+    "rollup-plugin-replace": "^2.1.0",
+    "tinyjx": "^0.3.6"
+  },
+  "dependencies": {}
+}

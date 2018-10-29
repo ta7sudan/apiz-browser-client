@@ -1,8 +1,3 @@
-# apiz-browser-client
-apiz-browser-client implements the `APIzClient` interface for browser.
-
-
-
 ## Usage
 
 ```javascript

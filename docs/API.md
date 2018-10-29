@@ -1,3 +1,7 @@
+apiz-browser-client implements the `APIzClient` interface for browser, based on [tinyjx](https://github.com/ta7sudan/tinyjx), so you can use options of tinyjx.
+
+
+
 ## Usage
 
 ```javascript
@@ -22,3 +26,4 @@ const apis = new APIz(apiMeta, {
 })
 ```
 
+`beforeRequest` and  `afterResponse` are hooks of [tinyjx](https://github.com/ta7sudan/tinyjx).

@@ -1,6 +1,6 @@
 {
   "name": "apiz-browser-client",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Browser client for apiz",
   "main": "dist/apizclient.umd.js",
   "module": "dist/apizclient.esm.js",

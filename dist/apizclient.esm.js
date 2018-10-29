@@ -444,10 +444,11 @@ function index (opts = {}) {
     url,
     method: cur.toUpperCase(),
     options: options$$1
-  }, opts)), prev), {}), ['post', 'put', 'patch', 'delete', 'options'].reduce((prev, cur) => (prev[cur] = (url, options$$1) => request(_extends({
+  }, opts)), prev), {}), ['post', 'put', 'patch', 'delete', 'options'].reduce((prev, cur) => (prev[cur] = (url, bodyOrOptions, type) => request(_extends({
     url,
+    type,
     method: cur.toUpperCase(),
-    options: options$$1
+    options: bodyOrOptions
   }, opts)), prev), {}));
 }
 

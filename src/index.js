@@ -60,10 +60,11 @@ export default function (opts = {}) {
 				...opts
 			}), prev), {}),
 		...['post', 'put', 'patch', 'delete', 'options'].reduce((prev, cur) => 
-			(prev[cur] = (url, options) => request({
+			(prev[cur] = (url, bodyOrOptions, type) => request({
 				url,
+				type,
 				method: cur.toUpperCase(),
-				options,
+				options: bodyOrOptions,
 				...opts
 			}), prev), {}),
 	};

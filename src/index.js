@@ -66,6 +66,6 @@ export default function (opts = {}) {
 				method: cur.toUpperCase(),
 				options: bodyOrOptions,
 				...opts
-			}), prev), {}),
+			}), prev), {})
 	};
 }

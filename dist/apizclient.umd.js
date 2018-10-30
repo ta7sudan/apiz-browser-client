@@ -403,7 +403,7 @@
   }) {
     if (data) {
       options$$1.data = data;
-      options$$1.dataType = type;
+      options$$1.contentType = type;
     }
 
     options$$1.url = url;

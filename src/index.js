@@ -4,7 +4,7 @@ import { ajax } from 'tinyjx';
 function request({ url, method, type, data, options = {}, beforeSend, afterResponse }) {
 	if (data) {
 		options.data = data;
-		options.dataType = type;
+		options.contentType = type;
 	}
 	options.url = url;
 	options.method = method;

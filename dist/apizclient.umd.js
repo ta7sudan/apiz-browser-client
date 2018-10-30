@@ -392,37 +392,24 @@
     };
   }
 
-  const ArrayBufferView$1 = Object.getPrototypeOf(Object.getPrototypeOf(new Uint8Array())).constructor;
-
   function request({
     url,
     method,
     type,
-    options: options$$1,
+    data,
+    options: options$$1 = {},
     beforeSend,
     afterResponse
   }) {
-    let data;
-
-    if (options$$1 instanceof Document || options$$1 instanceof Blob || options$$1 instanceof FormData || options$$1 instanceof ArrayBuffer || options$$1 instanceof ArrayBufferView$1 || typeof options$$1 === 'string') {
-      data = options$$1;
-      options$$1 = {
-        url,
-        method,
-        data
-      };
-    } else if (Object.prototype.toString.call(options$$1) === '[object Object]') {
-      Object.assign(options$$1, {
-        url,
-        method
-      });
-    } else {
-      throw new TypeError('Options for tinyjx must be an object.');
+    if (data) {
+      options$$1.data = data;
+      options$$1.dataType = type;
     }
 
+    options$$1.url = url;
+    options$$1.method = method;
     return new Promise((rs, rj) => {
       ajax(_extends({
-        dataType: type,
         beforeSend,
 
         success(data, xhr) {
@@ -450,11 +437,12 @@
       url,
       method: cur.toUpperCase(),
       options: options$$1
-    }, opts)), prev), {}), ['post', 'put', 'patch', 'delete', 'options'].reduce((prev, cur) => (prev[cur] = (url, bodyOrOptions, type) => request(_extends({
+    }, opts)), prev), {}), ['post', 'put', 'patch', 'delete', 'options'].reduce((prev, cur) => (prev[cur] = (url, bodyOrOptions, type, isOptions) => request(_extends({
       url,
       type,
       method: cur.toUpperCase(),
-      options: bodyOrOptions
+      data: isOptions ? undefined : bodyOrOptions,
+      options: isOptions ? bodyOrOptions : undefined
     }, opts)), prev), {}));
   }
 

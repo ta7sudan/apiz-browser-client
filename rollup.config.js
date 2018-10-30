@@ -17,6 +17,15 @@ const banner = `/**
  * @License: ${license}
  */`;
 
+/**
+ * 
+ * 如果把tinyjx作为构建时依赖, 那tinyjx升级版本这里就也要跟着升级版本,
+ * 这就有些傻屌, 如果作为运行时依赖不打包进去, 但Webpack的babel通常
+ * 又不会扫node_modules, 那这个运行时依赖等于缺失, 这也很傻屌...
+ * 那他妈的还是作为构建时依赖打包进去吧...
+ * 
+ */
+
 export default [
 	{
 		input: 'src/index.js',
@@ -62,6 +71,9 @@ export default [
 				comments: false
 			})
 		],
+		treeshake: {
+			propertyReadSideEffects: false
+		},
 		output: {
 			name,
 			banner,

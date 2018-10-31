@@ -43,7 +43,6 @@ export default [
 		},
 		output: [
 			{
-				banner,
 				file: module,
 				format: 'esm',
 				sourcemap: true

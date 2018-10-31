@@ -28,13 +28,6 @@
     return _extends.apply(this, arguments);
   }
 
-  /**
-   * @Version 0.3.7
-   * @Author: ta7sudan
-   * @Repo: https://github.com/ta7sudan/tinyjx#readme
-   * @License: MIT
-   */
-
   /* global false */
   const isFn = fn => typeof fn === 'function';
 

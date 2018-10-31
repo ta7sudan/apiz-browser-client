@@ -1,9 +1,3 @@
-/**
- * @Version 0.1.7
- * @Author: ta7sudan
- * @Repo: https://github.com/ta7sudan/apiz-browser-client#readme
- * @License: MIT
- */
 (function (global, factory) {
   typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
   typeof define === 'function' && define.amd ? define(factory) :

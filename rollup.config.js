@@ -10,6 +10,7 @@ import { browser, module, name, version, license, author, homepage } from './pac
  * 不过有一点好的是, 用rollup的banner字段和babel-minify的banner字段都可以
  * uglify的话则需要自己处理下注释
  */
+/* eslint-disable-next-line */
 const banner = `/**
  * @Version ${version}
  * @Author: ${author}
@@ -43,13 +44,14 @@ export default [
 		},
 		output: [
 			{
+				// banner,
 				file: module,
 				format: 'esm',
 				sourcemap: true
 			},
 			{
 				name,
-				banner,
+				// banner,
 				file: browser,
 				format: 'umd',
 				sourcemap: true
@@ -75,7 +77,7 @@ export default [
 		},
 		output: {
 			name,
-			banner,
+			// banner,
 			file: 'dist/apizclient.min.js',
 			format: 'umd',
 			sourcemap: true,

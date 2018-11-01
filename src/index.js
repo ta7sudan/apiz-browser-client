@@ -13,7 +13,7 @@ function request({ url, method, type, data, options = {}, beforeSend, afterRespo
 			beforeSend,
 			success(data, xhr) {
 				try {
-					afterResponse(data, xhr);
+					typeof afterResponse === 'function' && afterResponse(data, xhr);
 				} catch (e) {
 					rj(e);
 					return;

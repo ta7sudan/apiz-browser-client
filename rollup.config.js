@@ -3,14 +3,13 @@ import replace from 'rollup-plugin-replace';
 import minify from 'rollup-plugin-babel-minify';
 import resolve from 'rollup-plugin-node-resolve';
 import { relative } from 'path';
-import { browser, module, name, version, license, author, homepage } from './package.json';
+import { browser, module, version, license, author, homepage } from './package.json';
 
 /**
  * 如果用babel-minify压缩的话, banner字符串的开头和结尾谜之不能换行
  * 不过有一点好的是, 用rollup的banner字段和babel-minify的banner字段都可以
  * uglify的话则需要自己处理下注释
  */
-/* eslint-disable-next-line */
 const banner = `/**
  * @Version ${version}
  * @Author: ${author}
@@ -44,14 +43,12 @@ export default [
 		},
 		output: [
 			{
-				// banner,
 				file: module,
 				format: 'esm',
 				sourcemap: true
 			},
 			{
-				name,
-				// banner,
+				name: 'apizClient',
 				file: browser,
 				format: 'umd',
 				sourcemap: true
@@ -76,8 +73,8 @@ export default [
 			propertyReadSideEffects: false
 		},
 		output: {
-			name,
-			// banner,
+			name: 'apizClient',
+			banner,
 			file: 'dist/apizclient.min.js',
 			format: 'umd',
 			sourcemap: true,

@@ -446,17 +446,17 @@
 
 
   function index (opts = {}) {
-    return _extends({}, ['get', 'head'].reduce((prev, cur) => (prev[cur] = (url, options$$1) => request(_extends({
+    return _extends({}, ['get', 'head'].reduce((prev, cur) => (prev[cur] = (url, options$$1) => request(_extends({}, opts, {
       url,
       method: cur.toUpperCase(),
       options: options$$1
-    }, opts)), prev), {}), ['post', 'put', 'patch', 'delete', 'options'].reduce((prev, cur) => (prev[cur] = (url, bodyOrOptions, type, isOptions) => request(_extends({
+    })), prev), {}), ['post', 'put', 'patch', 'delete', 'options'].reduce((prev, cur) => (prev[cur] = (url, bodyOrOptions, type, isOptions) => request(_extends({}, opts, {
       url,
       type,
       method: cur.toUpperCase(),
       data: isOptions ? undefined : bodyOrOptions,
       options: isOptions ? bodyOrOptions : undefined
-    }, opts)), prev), {}));
+    })), prev), {}));
   }
 
   return index;

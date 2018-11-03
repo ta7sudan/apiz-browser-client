@@ -21,7 +21,8 @@ const apis = new APIz(apiMeta, {
         },
         afterResponse(data, xhr) {
             console.log(data);
-        }
+        },
+        retry: 3
     })
 })
 ```

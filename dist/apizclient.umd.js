@@ -379,15 +379,30 @@
     };
   }
 
-  function request({
-    url,
-    method,
-    type,
-    data,
-    options: options$$1 = {},
-    beforeSend,
-    afterResponse
-  }) {
+  const retryMap = {};
+  let reqId = Date.now();
+
+  function request(opts) {
+    let {
+      url,
+      method,
+      type,
+      data,
+      beforeSend,
+      afterResponse,
+      retry = 0,
+      options: options$$1 = {},
+      id = ++reqId
+    } = opts;
+
+    if (!retryMap[id]) {
+      retryMap[id] = {
+        count: 0,
+        retry
+      };
+      opts.id = id;
+    }
+
     if (data) {
       options$$1.data = data;
       options$$1.contentType = type;
@@ -400,6 +415,8 @@
         beforeSend,
 
         success(data, xhr) {
+          delete retryMap[id];
+
           try {
             typeof afterResponse === 'function' && afterResponse(data, xhr);
           } catch (e) {
@@ -410,12 +427,21 @@
           rs(data);
         },
 
-        error: rj
+        error(err) {
+          if (retryMap[id].count < retryMap[id].retry) {
+            ++retryMap[id].count;
+            rs(request(opts));
+          } else {
+            delete retryMap[id];
+            rj(err);
+          }
+        }
+
       }, options$$1));
     });
   }
   /**
-   * { beforeSend, afterResponse }
+   * { beforeSend, afterResponse, retry }
    */
 
 

@@ -6,13 +6,8 @@ let reqId = Date.now();
 
 function request(opts) {
 	let { url, method, type, data, beforeSend, afterResponse, retry = 0, options = {}, id = ++reqId } = opts;
-	if (!retryMap[id]) {
-		retryMap[id] = {
-			count: 0,
-			retry
-		};
-		opts.id = id;
-	}
+	retryMap[id] = -~retryMap[id];
+	opts.id = id;
 	if (data) {
 		options.data = data;
 		options.contentType = type;
@@ -33,8 +28,7 @@ function request(opts) {
 				rs(data);
 			},
 			error(err) {
-				if (retryMap[id].count < retryMap[id].retry) {
-					++retryMap[id].count;
+				if (retryMap[id] < retry + 1) {
 					rs(request(opts));
 				} else {
 					delete retryMap[id];

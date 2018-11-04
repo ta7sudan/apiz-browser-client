@@ -394,14 +394,8 @@
       options: options$$1 = {},
       id = ++reqId
     } = opts;
-
-    if (!retryMap[id]) {
-      retryMap[id] = {
-        count: 0,
-        retry
-      };
-      opts.id = id;
-    }
+    retryMap[id] = -~retryMap[id];
+    opts.id = id;
 
     if (data) {
       options$$1.data = data;
@@ -428,8 +422,7 @@
         },
 
         error(err) {
-          if (retryMap[id].count < retryMap[id].retry) {
-            ++retryMap[id].count;
+          if (retryMap[id] < retry + 1) {
             rs(request(opts));
           } else {
             delete retryMap[id];

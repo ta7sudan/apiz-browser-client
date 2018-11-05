@@ -446,15 +446,15 @@ function index (opts = {}) {
     name,
     meta,
     url,
-    bodyOrOptions,
-    type,
-    isOptions
+    body,
+    options: options$$1,
+    type
   }) => request(_extends({}, opts, {
     url,
     type,
+    options: options$$1,
     method: cur.toUpperCase(),
-    data: isOptions ? undefined : bodyOrOptions,
-    options: isOptions ? bodyOrOptions : undefined
+    data: body
   })), prev), {}));
 }
 

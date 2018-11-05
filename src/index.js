@@ -53,13 +53,13 @@ export default function (opts = {}) {
 				options
 			}), prev), {}),
 		...['post', 'put', 'patch', 'delete', 'options'].reduce((prev, cur) =>
-			(prev[cur] = ({ name, meta, url, bodyOrOptions, type, isOptions }) => request({
+			(prev[cur] = ({ name, meta, url, body, options, type }) => request({
 				...opts,
 				url,
 				type,
+				options,
 				method: cur.toUpperCase(),
-				data: isOptions ? undefined : bodyOrOptions,
-				options: isOptions ? bodyOrOptions : undefined
+				data: body
 			}), prev), {})
 	};
 }

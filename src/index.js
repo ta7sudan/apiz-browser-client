@@ -46,14 +46,14 @@ function request(opts) {
 export default function (opts = {}) {
 	return {
 		...['get', 'head'].reduce((prev, cur) =>
-			(prev[cur] = (url, options) => request({
+			(prev[cur] = ({ name, meta, url, options }) => request({
 				...opts,
 				url,
 				method: cur.toUpperCase(),
 				options
 			}), prev), {}),
 		...['post', 'put', 'patch', 'delete', 'options'].reduce((prev, cur) =>
-			(prev[cur] = (url, bodyOrOptions, type, isOptions) => request({
+			(prev[cur] = ({ name, meta, url, bodyOrOptions, type, isOptions }) => request({
 				...opts,
 				url,
 				type,

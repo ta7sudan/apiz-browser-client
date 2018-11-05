@@ -30,7 +30,6 @@ export default [
 	{
 		input: 'src/index.js',
 		plugins: [
-			resolve(),
 			replace({
 				DEBUG: JSON.stringify(false)
 			}),
@@ -38,6 +37,7 @@ export default [
 				exclude: 'node_modules/**'
 			})
 		],
+		external: ['tinyjx'],
 		treeshake: {
 			propertyReadSideEffects: false
 		},
@@ -45,13 +45,19 @@ export default [
 			{
 				file: module,
 				format: 'esm',
-				sourcemap: true
+				sourcemap: true,
+				globals: {
+					tinyjx: 'tinyjx'
+				}
 			},
 			{
 				name: 'apizClient',
 				file: browser,
 				format: 'umd',
-				sourcemap: true
+				sourcemap: true,
+				globals: {
+					tinyjx: 'tinyjx'
+				}
 			}
 		]
 	},

@@ -51,7 +51,7 @@ function request(opts) {
         delete retryMap[id];
 
         try {
-          typeof afterResponse === 'function' && afterResponse(data, xhr);
+          typeof afterResponse === 'function' && afterResponse(data, xhr, url, options.data);
         } catch (e) {
           rj(e);
           return;

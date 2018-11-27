@@ -75,6 +75,7 @@ export default [
 				comments: false
 			})
 		],
+		external: ['tinyjx'],
 		treeshake: {
 			propertyReadSideEffects: false
 		},

@@ -45,10 +45,7 @@ export default [
 			{
 				file: module,
 				format: 'esm',
-				sourcemap: true,
-				globals: {
-					tinyjx: 'tinyjx'
-				}
+				sourcemap: true
 			},
 			{
 				name: 'apizClient',
@@ -86,7 +83,10 @@ export default [
 			format: 'umd',
 			sourcemap: true,
 			// sourcemap生成之后在devtools本来看到的文件是src/index.js, 这个选项可以变成apizclient.js
-			sourcemapPathTransform: path => ~path.indexOf('index') ? 'apizclient.js' : relative('src', path)
+			sourcemapPathTransform: path => ~path.indexOf('index') ? 'apizclient.js' : relative('src', path),
+			globals: {
+				tinyjx: 'tinyjx'
+			}
 		}
 	}
 ];

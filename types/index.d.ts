@@ -1,6 +1,7 @@
 interface Options {
-	beforeSend?(xhr): void | boolean,
-	afterResponse?(data, xhr): void,
+	beforeSend?(xhr: XMLHttpRequest): void | boolean,
+	afterResponse?(resData: any, xhr: XMLHttpRequest, url: string, reqData: any): void,
+	onError?(err: Error, xhr: XMLHttpRequest, url: string, reqData: any): void,
 	retry?: number
 };
 

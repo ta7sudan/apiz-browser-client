@@ -20,9 +20,12 @@ const apis = new APIz(apiMeta, {
         beforeSend(xhr) {
             return false;
         },
-        afterResponse(data, xhr) {
-            console.log(data);
+        afterResponse(resData, xhr, url, reqData) {
+            console.log(resData);
         },
+        onError(err, xhr, url, reqData) {
+            console.log(err.message);
+        }
         retry: 3
     })
 })

@@ -48,23 +48,18 @@ function request(opts) {
       beforeSend,
 
       success(data, xhr) {
-        delete retryMap[id];
+        delete retryMap[id]; // 算了, 这个异常还是让它直接crash掉吧, 和后面保持一致
 
-        try {
-          typeof afterResponse === 'function' && afterResponse(data, xhr, url, options.data);
-        } catch (e) {
-          rj(e);
-          return;
-        }
-
+        typeof afterResponse === 'function' && afterResponse(data, xhr, url, options.data);
         rs(data);
       },
 
-      error(err) {
+      error(err, xhr) {
         if (retryMap[id] < retry + 1) {
           rs(request(opts));
         } else {
           delete retryMap[id];
+          typeof afterResponse === 'function' && afterResponse(null, xhr, url, options.data);
           rj(err);
         }
       }

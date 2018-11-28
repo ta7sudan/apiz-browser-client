@@ -23,11 +23,16 @@ const apis = new APIz(apiMeta, {
         afterResponse(resData, xhr, url, reqData) {
             console.log(resData);
         },
-        onError(err, xhr, url, reqData) {
-            console.log(err.message);
-        }
+        complete(resData, xhr, url, reqData) {
+            console.log(resData);
+        },
         retry: 3
     })
+});
+
+apis.getBook().then({data, next} => {
+    console.log(data);
+    next();
 })
 ```
 

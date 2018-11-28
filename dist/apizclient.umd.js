@@ -35,16 +35,17 @@
       data,
       beforeSend,
       afterResponse,
-      onError,
+      complete,
       retry = 0,
       options = {},
       id = ++reqId
-    } = opts;
+    } = opts,
+        reqData;
     retryMap[id] = -~retryMap[id];
     opts.id = id;
 
     if (data) {
-      options.data = data;
+      reqData = options.data = data;
       options.contentType = type;
     }
 
@@ -57,8 +58,15 @@
         success(data, xhr) {
           delete retryMap[id]; // 算了, 这个异常还是让它直接crash掉吧, 和后面保持一致
 
-          isFn(afterResponse) && afterResponse(data, xhr, url, options.data);
-          rs(data);
+          isFn(afterResponse) && afterResponse(data, xhr, url, reqData);
+          rs({
+            data,
+
+            next() {
+              isFn(complete) && complete(data, xhr, url, reqData);
+            }
+
+          });
         },
 
         error(err, xhr) {
@@ -66,17 +74,12 @@
             rs(request(opts));
           } else {
             delete retryMap[id];
-            isFn(afterResponse) && afterResponse(null, xhr, url, options.data); // 受限于Promise, 没办法知道最后一个Promise什么时候结束,
-            // 只能通过传入一个next, 由用户自己决定要不要触发全局异常处理,
-            // 但是这增加了使用者的心智负担, 如果不记得调用next, 则全局异常处理
-            // 不会被调用, 理想情况应当是不记得自行处理异常则默认fallback到全局
-            // 异常, 但是没办法做到, 只能以这样一种蹩脚的形式处理了, 有好过没有
-
+            isFn(afterResponse) && afterResponse(undefined, xhr, url, reqData);
             rj({
               err,
 
               next() {
-                isFn(onError) && onError(err, xhr, url, options.data);
+                isFn(complete) && complete(undefined, xhr, url, reqData);
               }
 
             });
@@ -87,7 +90,7 @@
     });
   }
   /**
-   * { beforeSend, afterResponse, onError, retry }
+   * { beforeSend, afterResponse, retry }
    */
 
 

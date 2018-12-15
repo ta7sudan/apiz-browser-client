@@ -30,7 +30,7 @@ const apis = new APIz(apiMeta, {
     })
 });
 
-apis.getBook().then({data, next} => {
+apis.getBook().then(({data, next}) => {
     console.log(data);
     next();
 })

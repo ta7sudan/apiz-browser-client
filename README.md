@@ -20,7 +20,7 @@ const apis = new APIz(apiMeta, {
         beforeSend(xhr) {
             return false;
         },
-        afterResponse(resData, xhr, url, reqData) {
+        afterResponse(resData, status, xhr, url, reqData) {
             console.log(resData);
         },
         complete(resData, xhr, url, reqData) {

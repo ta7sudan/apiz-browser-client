@@ -58,7 +58,7 @@
         success(data, xhr) {
           delete retryMap[id]; // 算了, 这个异常还是让它直接crash掉吧, 和后面保持一致
 
-          isFn(afterResponse) && afterResponse(data, xhr, url, reqData);
+          isFn(afterResponse) && afterResponse(data, 'success', xhr, url, reqData);
           rs({
             data,
 
@@ -69,12 +69,12 @@
           });
         },
 
-        error(err, xhr) {
+        error(err, data, xhr) {
           if (retryMap[id] < retry + 1) {
             rs(request(opts));
           } else {
             delete retryMap[id];
-            isFn(afterResponse) && afterResponse(undefined, xhr, url, reqData);
+            isFn(afterResponse) && afterResponse(data, 'error', xhr, url, reqData);
             rj({
               err,
 

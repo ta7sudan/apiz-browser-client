@@ -1,3 +1,4 @@
+import typescript from 'rollup-plugin-typescript2';
 import babel from 'rollup-plugin-babel';
 import replace from 'rollup-plugin-replace';
 import minify from 'rollup-plugin-babel-minify';
@@ -28,8 +29,12 @@ const banner = `/**
 
 export default [
 	{
-		input: 'src/index.js',
+		input: 'src/index.ts',
 		plugins: [
+			typescript({
+				tsconfig: 'tsconfig.json',
+				useTsconfigDeclarationDir: true
+			}),
 			replace({
 				DEBUG: JSON.stringify(false)
 			}),
@@ -48,7 +53,7 @@ export default [
 				sourcemap: true
 			},
 			{
-				name: 'apizClient',
+				name: 'ApizClient',
 				file: browser,
 				format: 'umd',
 				sourcemap: true,
@@ -59,9 +64,13 @@ export default [
 		]
 	},
 	{
-		input: 'src/index.js',
+		input: 'src/index.ts',
 		plugins: [
 			resolve(),
+			typescript({
+				tsconfig: 'tsconfig.json',
+				useTsconfigDeclarationDir: true
+			}),
 			replace({
 				DEBUG: JSON.stringify(false)
 			}),
@@ -77,7 +86,7 @@ export default [
 			propertyReadSideEffects: false
 		},
 		output: {
-			name: 'apizClient',
+			name: 'ApizClient',
 			banner,
 			file: 'dist/apizclient.min.js',
 			format: 'umd',

@@ -8,8 +8,9 @@ export interface APIzClientOptions {
 }
 export declare type APIzClientType = keyof MIMEType;
 export declare type APIzClientMeta = any;
+export declare type APIzClientInstance = APIzClient<APIzClientType, APIzClientMeta, AsyncOptions, HTTPMethodLowerCase>;
 /**
  * { beforeSend, afterResponse, retry }
  */
-export default function (opts?: APIzClientOptions): APIzClient<APIzClientType, APIzClientMeta, AsyncOptions, HTTPMethodLowerCase>;
+export default function (opts?: APIzClientOptions): APIzClientInstance;
 //# sourceMappingURL=index.d.ts.map

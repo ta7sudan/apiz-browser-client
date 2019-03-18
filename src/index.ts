@@ -76,10 +76,12 @@ export type APIzClientType = keyof MIMEType;
 
 export type APIzClientMeta = any;
 
+export type APIzClientInstance = APIzClient<APIzClientType, APIzClientMeta, AsyncOptions, HTTPMethodLowerCase>;
+
 /**
  * { beforeSend, afterResponse, retry }
  */
-export default function (opts: APIzClientOptions = {}): APIzClient<APIzClientType, APIzClientMeta, AsyncOptions, HTTPMethodLowerCase> {
+export default function (opts: APIzClientOptions = {}): APIzClientInstance {
 	return {
 		...['get', 'head'].reduce((prev, cur) =>
 			(prev[cur as HTTPMethodLowerCase] = ({ name, meta, url, options }: ClientRequestOptions<APIzClientType, APIzClientMeta, AsyncOptions>) => request({

@@ -63,7 +63,6 @@
     "@babel/polyfill": "^7.2.5",
     "@babel/preset-env": "^7.3.4",
     "@babel/register": "^7.0.0",
-    "apiz-ng": "^2.1.1",
     "babel-plugin-array-includes": "^2.0.3",
     "eslint": "^5.15.2",
     "eslint-plugin-prettier": "^3.0.1",
@@ -83,6 +82,7 @@
     "typescript": "^3.3.3333"
   },
   "dependencies": {
+    "apiz-ng": "^1.1.3",
     "tinyjx": "^2.0.2",
     "tslib": "^1.9.3"
   }

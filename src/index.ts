@@ -78,6 +78,8 @@ export type APIzClientMeta = any;
 
 export type APIzClientInstance = APIzClient<APIzClientType, APIzClientMeta, AsyncOptions, HTTPMethodLowerCase>;
 
+export { AsyncOptions as APIzRequestOptions };
+
 /**
  * { beforeSend, afterResponse, retry }
  */

@@ -39,7 +39,8 @@ export default [
 				DEBUG: JSON.stringify(false)
 			}),
 			babel({
-				exclude: 'node_modules/**'
+				exclude: 'node_modules/**',
+				extensions: ['.js', '.ts']
 			})
 		],
 		external: ['tinyjx'],
@@ -75,7 +76,8 @@ export default [
 				DEBUG: JSON.stringify(false)
 			}),
 			babel({
-				exclude: 'node_modules/**'
+				exclude: 'node_modules/**',
+				extensions: ['.js', '.ts']
 			}),
 			minify({
 				comments: false

@@ -30,7 +30,7 @@ function request(opts: RequestOptions): Promise<any> {
 				// 算了, 这个异常还是让它直接crash掉吧, 和后面保持一致
 				isFn(afterResponse) && afterResponse($data, 'success', xhr, url, reqData);
 				rs({
-					$data,
+					data: $data,
 					next() {
 						isFn(complete) && complete($data, xhr, url, reqData);
 					}

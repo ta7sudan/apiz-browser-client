@@ -46,7 +46,7 @@
 
 	        isFn(afterResponse) && afterResponse($data, 'success', xhr, url, reqData);
 	        rs({
-	          $data,
+	          data: $data,
 
 	          next() {
 	            isFn(complete) && complete($data, xhr, url, reqData);

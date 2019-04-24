@@ -8,7 +8,7 @@ export interface APIzClientOptions {
 }
 export declare type APIzClientType = keyof MIMEType;
 export declare type APIzClientMeta = any;
-export declare type APIzClientInstance = APIzClient<APIzClientType, APIzClientMeta, AsyncOptions, HTTPMethodLowerCase>;
+export declare type APIzClientInstance = APIzClient<AsyncOptions, APIzClientType, APIzClientMeta, HTTPMethodLowerCase>;
 export { AsyncOptions as APIzRequestOptions };
 /**
  * { beforeSend, afterResponse, retry }

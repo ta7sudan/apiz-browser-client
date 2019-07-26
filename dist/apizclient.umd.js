@@ -1,113 +1,162 @@
 (function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('tinyjx')) :
-	typeof define === 'function' && define.amd ? define(['tinyjx'], factory) :
-	(global = global || self, global.ApizClient = factory(global.tinyjx));
+  typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory(require('tinyjx')) :
+  typeof define === 'function' && define.amd ? define(['tinyjx'], factory) :
+  (global = global || self, global.ApizClient = factory(global.tinyjx));
 }(this, function (tinyjx) { 'use strict';
 
-	/* global false */
+  function _extends() {
+    _extends = Object.assign || function (target) {
+      for (var i = 1; i < arguments.length; i++) {
+        var source = arguments[i];
 
-	const retryMap = {},
-	      isFn = f => typeof f === 'function';
+        for (var key in source) {
+          if (Object.prototype.hasOwnProperty.call(source, key)) {
+            target[key] = source[key];
+          }
+        }
+      }
 
-	let reqId = Date.now();
+      return target;
+    };
 
-	function request(opts) {
-	  // tslint:disable-next-line
-	  let {
-	    url,
-	    method,
-	    type,
-	    data,
-	    beforeSend,
-	    afterResponse,
-	    complete,
-	    retry = 0,
-	    options = {},
-	    id = ++reqId
-	  } = opts,
-	      reqData;
-	  retryMap[id] = -~retryMap[id];
-	  opts.id = id;
+    return _extends.apply(this, arguments);
+  }
 
-	  if (data) {
-	    reqData = options.data = data;
-	    options.contentType = type;
-	  }
+  const isFn = f => typeof f === 'function';
 
-	  options.url = url;
-	  options.method = method;
-	  return new Promise((rs, rj) => {
-	    tinyjx.ajax(Object.assign({
-	      beforeSend,
+  function isPromise(p) {
+    return !!(p && typeof p.then === 'function');
+  }
 
-	      // $防止遮蔽
-	      success($data, xhr) {
-	        delete retryMap[id]; // 算了, 这个异常还是让它直接crash掉吧, 和后面保持一致
+  async function pRetry(fn, {
+    retry,
+    beforeRetry
+  }, alreadyTried = 1) {
+    let rst = null;
 
-	        isFn(afterResponse) && afterResponse($data, 'success', xhr, url, reqData);
-	        rs({
-	          data: $data,
+    if (retry < 0 || retry > Number.MAX_SAFE_INTEGER && retry !== Infinity) {
+      throw new Error('retry must be between 0 to Number.MAX_SAFE_INTEGER or be Infinity');
+    }
 
-	          next() {
-	            isFn(complete) && complete($data, xhr, url, reqData);
-	          }
+    try {
+      rst = fn.call(this);
 
-	        });
-	      },
+      if (isPromise(rst)) {
+        rst = await rst;
+      }
+    } catch (e) {
+      if (beforeRetry) {
+        beforeRetry(alreadyTried, e);
+      }
 
-	      // $防止遮蔽
-	      error(err, $data, xhr) {
-	        if (retryMap[id] < retry + 1) {
-	          rs(request(opts));
-	        } else {
-	          delete retryMap[id];
-	          isFn(afterResponse) && afterResponse($data, 'error', xhr, url, reqData);
-	          rj({
-	            err,
+      if (retry) {
+        return pRetry(fn, {
+          // tslint:disable-next-line
+          retry: --retry,
+          beforeRetry
+        }, // tslint:disable-next-line
+        ++alreadyTried);
+      } else {
+        throw e;
+      }
+    }
 
-	            next() {
-	              isFn(complete) && complete(undefined, xhr, url, reqData);
-	            }
+    return rst;
+  }
 
-	          });
-	        }
-	      }
+  function createRequest({
+    method,
+    beforeSend,
+    afterResponse,
+    error,
+    retry = 0
+  }) {
+    return function request({
+      url,
+      options,
+      body,
+      headers,
+      type,
+      handleError = true
+    }) {
+      let $options,
+          count = 0;
 
-	    }, options));
-	  });
-	}
-	/**
-	 * { beforeSend, afterResponse, retry }
-	 */
+      if (options) {
+        $options = _extends({}, options, {
+          url,
+          method
+        });
+      } else {
+        $options = {
+          url,
+          method,
+          processData: false,
+          data: body,
+          contentType: type,
+          headers
+        };
+      }
+
+      return pRetry(() => {
+        // tslint:disable-next-line
+        return new Promise((rs, rj) => {
+          tinyjx.ajax(_extends({}, $options, {
+            beforeSend(xhr) {
+              if (!count && isFn(beforeSend)) {
+                return beforeSend(xhr);
+              }
+            },
+
+            success(data, xhr) {
+              isFn(afterResponse) && count === retry && afterResponse(data, 'success', xhr, url, body);
+              rs({
+                data,
+                xhr
+              });
+            },
+
+            recoverableError(err, data, xhr) {
+              isFn(afterResponse) && count === retry && afterResponse(data, 'error', xhr, url, body);
+              isFn(error) && count === retry && handleError && error('recoverableError', err, data, xhr);
+              rj({
+                err,
+                data
+              });
+            },
+
+            unrecoverableError(err, xhr) {
+              isFn(error) && count === retry && handleError && error('unrecoverableError', err, undefined, xhr);
+              rj({
+                err,
+                data: undefined
+              });
+            }
+
+          }));
+        });
+      }, {
+        retry,
+
+        beforeRetry() {
+          ++count;
+        }
+
+      });
+    };
+  }
+  /**
+   * { beforeSend, afterResponse, retry }
+   */
 
 
-	function index (opts = {}) {
-	  return Object.assign({}, ['get', 'head'].reduce((prev, cur) => (prev[cur] = ({
-	    name,
-	    meta,
-	    url,
-	    options
-	  }) => request(Object.assign({}, opts, {
-	    url,
-	    method: cur.toUpperCase(),
-	    options
-	  })), prev), {}), ['post', 'put', 'patch', 'delete', 'options'].reduce((prev, cur) => (prev[cur] = ({
-	    name,
-	    meta,
-	    url,
-	    body,
-	    options,
-	    type
-	  }) => request(Object.assign({}, opts, {
-	    url,
-	    type,
-	    options,
-	    method: cur.toUpperCase(),
-	    data: body
-	  })), prev), {}));
-	}
+  function index (opts = {}) {
+    return ['get', 'head', 'post', 'put', 'patch', 'delete', 'options'].reduce((prev, cur) => (prev[cur] = createRequest(_extends({}, opts, {
+      method: cur.toUpperCase()
+    })), prev), {});
+  }
 
-	return index;
+  return index;
 
 }));
 //# sourceMappingURL=apizclient.umd.js.map

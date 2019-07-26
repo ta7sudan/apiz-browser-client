@@ -64,7 +64,7 @@
     "@babel/polyfill": "^7.2.5",
     "@babel/preset-env": "^7.3.4",
     "@babel/register": "^7.0.0",
-    "apiz-ng": "^3.0.2",
+    "apiz-ng": "^4.0.0",
     "babel-plugin-array-includes": "^2.0.3",
     "conventional-changelog-cli": "^2.0.12",
     "cz-conventional-changelog": "^2.1.0",
@@ -83,10 +83,10 @@
     "rollup-plugin-typescript2": "^0.20.1",
     "tslint": "^5.14.0",
     "tslint-config-prettier": "^1.18.0",
-    "typescript": "^3.3.3333"
+    "typescript": "^3.5.3"
   },
   "dependencies": {
-    "tinyjx": "^2.0.3",
+    "tinyjx": "^3.1.1",
     "tslib": "^1.9.3"
   },
   "config": {

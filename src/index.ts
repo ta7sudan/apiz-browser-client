@@ -1,105 +1,168 @@
 /* global DEBUG */
 // tslint:disable-next-line
-import { MIMEType, ajax, AsyncOptions } from 'tinyjx';
+import { MIMEType, ajax, AjaxOptions } from 'tinyjx';
 // tslint:disable-next-line
-import { APIzClient, HTTPMethodLowerCase, ClientRequestOptions, HTTPMethodUpperCase } from "apiz-ng";
-
-const retryMap: {
-	[k: number]: number;
-	// tslint:disable-next-line
-} = {}, isFn = (f: any): f is Function => typeof f === 'function';
-let reqId = Date.now();
-
-function request(opts: RequestOptions): Promise<any> {
-	// tslint:disable-next-line
-	let { url, method, type, data, beforeSend, afterResponse, complete, retry = 0, options = {}, id = ++reqId } = opts, reqData: any;
-	retryMap[id] = -~retryMap[id];
-	opts.id = id;
-	if (data) {
-		reqData = options.data = data;
-		options.contentType = type;
-	}
-	options.url = url;
-	options.method = method;
-	return new Promise((rs, rj) => {
-		ajax({
-			beforeSend,
-			// $防止遮蔽
-			success($data, xhr) {
-				delete retryMap[id];
-				// 算了, 这个异常还是让它直接crash掉吧, 和后面保持一致
-				isFn(afterResponse) && afterResponse($data, 'success', xhr, url, reqData);
-				rs({
-					data: $data,
-					next() {
-						isFn(complete) && complete($data, xhr, url, reqData);
-					}
-				});
-			},
-			// $防止遮蔽
-			error(err, $data, xhr) {
-				if (retryMap[id] < retry + 1) {
-					rs(request(opts));
-				} else {
-					delete retryMap[id];
-					isFn(afterResponse) && afterResponse($data, 'error', xhr, url, reqData);
-					rj({
-						err,
-						next() {
-							isFn(complete) && complete(undefined, xhr, url, reqData);
-						}
-					});
-				}
-			},
-			...options
-		});
-	});
-}
-
-export interface APIzClientOptions {
-	beforeSend?(xhr: XMLHttpRequest): void | boolean,
-	afterResponse?(resData: any, status: string, xhr: XMLHttpRequest, url: string, reqData: any): void,
-	complete?(resData: any, xhr: XMLHttpRequest, url: string, reqData: any): void,
-	retry?: number
-}
-
-interface RequestOptions extends APIzClientOptions {
-	id?: number;
-	url: string;
-	type?: APIzClientType;
-	options?: AsyncOptions;
-	method: HTTPMethodUpperCase;
-	data?: any;
-}
+import { APIzClient, HTTPMethodLowerCase, ClientRequestOptions, APIzClientRequest, HTTPMethodUpperCase } from 'apiz-ng';
 
 export type APIzClientType = keyof MIMEType;
 
 export type APIzClientMeta = any;
 
-export type APIzClientInstance = APIzClient<AsyncOptions, APIzClientType, APIzClientMeta, HTTPMethodLowerCase>;
+export type APIzClientInstance = APIzClient<AjaxOptions, APIzClientType, any, HTTPMethodLowerCase>;
 
-export { AsyncOptions as APIzRequestOptions };
+export { AjaxOptions as APIzRawRequestOptions };
+
+export interface APIzClientConstructorOptions {
+	beforeSend?: (xhr: XMLHttpRequest) => void | boolean,
+	afterResponse?: (resData: any, status: string, xhr: XMLHttpRequest, url: string, reqData: any) => void,
+	error?: (errType: string, err: Error, data: any, xhr: XMLHttpRequest) => void,
+	retry?: number
+}
+
+interface APIzClientConstructorOptionsWithMethod extends APIzClientConstructorOptions {
+	method: HTTPMethodUpperCase;
+}
+
+type Callable = (...args: Array<any>) => any;
+
+const isFn = (f: any): f is Callable => typeof f === 'function';
+
+function isPromise<T = any>(p: any): p is Promise<T> {
+	return !!(p && typeof p.then === 'function');
+}
+
+async function pRetry<Result = any>(
+	this: any,
+	fn: (...args: any[]) => any,
+	{
+		retry,
+		beforeRetry
+	}: {
+		retry: number;
+		beforeRetry?: (retryCount: number, e: Error) => any;
+	},
+	alreadyTried: number = 1
+): Promise<Result> {
+	let rst: Result | Promise<Result> | null = null;
+	if (retry < 0 || (retry > Number.MAX_SAFE_INTEGER && retry !== Infinity)) {
+		throw new Error('retry must be between 0 to Number.MAX_SAFE_INTEGER or be Infinity');
+	}
+
+	try {
+		rst = fn.call(this);
+		if (isPromise<Result>(rst)) {
+			rst = await rst;
+		}
+	} catch (e) {
+		if (beforeRetry) {
+			beforeRetry(alreadyTried, e);
+		}
+		if (retry) {
+			return pRetry<Result>(
+				fn,
+				{
+					// tslint:disable-next-line
+					retry: --retry,
+					beforeRetry
+				},
+				// tslint:disable-next-line
+				++alreadyTried
+			);
+		} else {
+			throw e;
+		}
+	}
+	return rst!;
+}
+
+
+function createRequest({
+		method,
+		beforeSend,
+		afterResponse,
+		error,
+		retry = 0
+	}: APIzClientConstructorOptionsWithMethod
+): APIzClientRequest<AjaxOptions, APIzClientType, APIzClientMeta> {
+	return function request({
+		url,
+		options,
+		body,
+		headers,
+		type,
+		handleError = true
+	}: ClientRequestOptions<AjaxOptions, APIzClientType, APIzClientMeta>): Promise<any> {
+		let $options: AjaxOptions | undefined, count = 0;
+		if (options) {
+			$options = {
+				...options,
+				url,
+				method
+			};
+		} else {
+			$options = {
+				url,
+				method,
+				processData: false,
+				data: body,
+				contentType: type,
+				headers
+			};
+		}
+		return pRetry(() => {
+			// tslint:disable-next-line
+			return new Promise((rs, rj) => {
+				ajax({
+					...$options,
+					beforeSend(xhr: XMLHttpRequest): any {
+						if (!count && isFn(beforeSend)) {
+							return beforeSend(xhr);
+						}
+					},
+					success(data: any, xhr: XMLHttpRequest): void {
+						isFn(afterResponse) && count === retry && afterResponse(data, 'success', xhr, url, body);
+						rs({
+							data,
+							xhr
+						});
+					},
+					recoverableError(err: Error, data: any, xhr: XMLHttpRequest): void {
+						isFn(afterResponse) && count === retry && afterResponse(data, 'error', xhr, url, body);
+						isFn(error) && count === retry && handleError && error('recoverableError', err, data, xhr);
+						rj({
+							err,
+							data
+						});
+					},
+					unrecoverableError(err: Error, xhr: XMLHttpRequest): void {
+						isFn(error) && count === retry && handleError && error('unrecoverableError', err, undefined, xhr);
+						rj({
+							err,
+							data: undefined
+						});
+					}
+				});
+			});
+		}, {
+			retry,
+			beforeRetry(): void {
+				++count;
+			}
+		});
+	};
+}
+
 
 /**
  * { beforeSend, afterResponse, retry }
  */
-export default function (opts: APIzClientOptions = {}): APIzClientInstance {
-	return {
-		...['get', 'head'].reduce((prev, cur) =>
-			(prev[cur as HTTPMethodLowerCase] = ({ name, meta, url, options }: ClientRequestOptions<AsyncOptions, APIzClientType, APIzClientMeta>) => request({
+export default function (opts: APIzClientConstructorOptions = {}): APIzClientInstance {
+	return (['get', 'head', 'post', 'put', 'patch', 'delete', 'options'] as Array<HTTPMethodLowerCase>)
+		.reduce(
+			(prev: APIzClientInstance, cur: HTTPMethodLowerCase) => (prev[cur] = createRequest({
 				...opts,
-				url,
-				method: cur.toUpperCase() as HTTPMethodUpperCase,
-				options
-			}), prev), {} as APIzClient<AsyncOptions, APIzClientType, APIzClientMeta, HTTPMethodLowerCase>),
-		...['post', 'put', 'patch', 'delete', 'options'].reduce((prev, cur) =>
-			(prev[cur as HTTPMethodLowerCase] = ({ name, meta, url, body, options, type }: ClientRequestOptions<AsyncOptions, APIzClientType, APIzClientMeta>) => request({
-				...opts,
-				url,
-				type,
-				options,
-				method: cur.toUpperCase() as HTTPMethodUpperCase,
-				data: body
-			}), prev), {} as APIzClient<AsyncOptions, APIzClientType, APIzClientMeta, HTTPMethodLowerCase>)
-	};
+				method: cur.toUpperCase() as HTTPMethodUpperCase
+			}), prev),
+			{} as APIzClientInstance
+		);
 }

@@ -1,76 +1,145 @@
 import { ajax } from 'tinyjx';
 
-/* global false */
+function _extends() {
+  _extends = Object.assign || function (target) {
+    for (var i = 1; i < arguments.length; i++) {
+      var source = arguments[i];
 
-const retryMap = {},
-      isFn = f => typeof f === 'function';
-
-let reqId = Date.now();
-
-function request(opts) {
-  // tslint:disable-next-line
-  let {
-    url,
-    method,
-    type,
-    data,
-    beforeSend,
-    afterResponse,
-    complete,
-    retry = 0,
-    options = {},
-    id = ++reqId
-  } = opts,
-      reqData;
-  retryMap[id] = -~retryMap[id];
-  opts.id = id;
-
-  if (data) {
-    reqData = options.data = data;
-    options.contentType = type;
-  }
-
-  options.url = url;
-  options.method = method;
-  return new Promise((rs, rj) => {
-    ajax(Object.assign({
-      beforeSend,
-
-      // $防止遮蔽
-      success($data, xhr) {
-        delete retryMap[id]; // 算了, 这个异常还是让它直接crash掉吧, 和后面保持一致
-
-        isFn(afterResponse) && afterResponse($data, 'success', xhr, url, reqData);
-        rs({
-          data: $data,
-
-          next() {
-            isFn(complete) && complete($data, xhr, url, reqData);
-          }
-
-        });
-      },
-
-      // $防止遮蔽
-      error(err, $data, xhr) {
-        if (retryMap[id] < retry + 1) {
-          rs(request(opts));
-        } else {
-          delete retryMap[id];
-          isFn(afterResponse) && afterResponse($data, 'error', xhr, url, reqData);
-          rj({
-            err,
-
-            next() {
-              isFn(complete) && complete(undefined, xhr, url, reqData);
-            }
-
-          });
+      for (var key in source) {
+        if (Object.prototype.hasOwnProperty.call(source, key)) {
+          target[key] = source[key];
         }
       }
+    }
 
-    }, options));
-  });
+    return target;
+  };
+
+  return _extends.apply(this, arguments);
+}
+
+const isFn = f => typeof f === 'function';
+
+function isPromise(p) {
+  return !!(p && typeof p.then === 'function');
+}
+
+async function pRetry(fn, {
+  retry,
+  beforeRetry
+}, alreadyTried = 1) {
+  let rst = null;
+
+  if (retry < 0 || retry > Number.MAX_SAFE_INTEGER && retry !== Infinity) {
+    throw new Error('retry must be between 0 to Number.MAX_SAFE_INTEGER or be Infinity');
+  }
+
+  try {
+    rst = fn.call(this);
+
+    if (isPromise(rst)) {
+      rst = await rst;
+    }
+  } catch (e) {
+    if (beforeRetry) {
+      beforeRetry(alreadyTried, e);
+    }
+
+    if (retry) {
+      return pRetry(fn, {
+        // tslint:disable-next-line
+        retry: --retry,
+        beforeRetry
+      }, // tslint:disable-next-line
+      ++alreadyTried);
+    } else {
+      throw e;
+    }
+  }
+
+  return rst;
+}
+
+function createRequest({
+  method,
+  beforeSend,
+  afterResponse,
+  error,
+  retry = 0
+}) {
+  return function request({
+    url,
+    options,
+    body,
+    headers,
+    type,
+    handleError = true
+  }) {
+    let $options,
+        count = 0;
+
+    if (options) {
+      $options = _extends({}, options, {
+        url,
+        method
+      });
+    } else {
+      $options = {
+        url,
+        method,
+        processData: false,
+        data: body,
+        contentType: type,
+        headers
+      };
+    }
+
+    return pRetry(() => {
+      // tslint:disable-next-line
+      return new Promise((rs, rj) => {
+        ajax(_extends({}, $options, {
+          beforeSend(xhr) {
+            if (!count && isFn(beforeSend)) {
+              return beforeSend(xhr);
+            }
+          },
+
+          success(data, xhr) {
+            isFn(afterResponse) && count === retry && afterResponse(data, 'success', xhr, url, body);
+            rs({
+              data,
+              xhr
+            });
+          },
+
+          recoverableError(err, data, xhr) {
+            isFn(afterResponse) && count === retry && afterResponse(data, 'error', xhr, url, body);
+            isFn(error) && count === retry && handleError && error('recoverableError', err, data, xhr);
+            rj({
+              err,
+              data
+            });
+          },
+
+          unrecoverableError(err, xhr) {
+            isFn(error) && count === retry && handleError && error('unrecoverableError', err, undefined, xhr);
+            rj({
+              err,
+              data: undefined
+            });
+          }
+
+        }));
+      });
+    }, {
+      retry,
+
+      beforeRetry() {
+        ++count;
+      }
+
+    });
+  };
 }
 /**
  * { beforeSend, afterResponse, retry }
@@ -78,29 +147,9 @@ function request(opts) {
 
 
 function index (opts = {}) {
-  return Object.assign({}, ['get', 'head'].reduce((prev, cur) => (prev[cur] = ({
-    name,
-    meta,
-    url,
-    options
-  }) => request(Object.assign({}, opts, {
-    url,
-    method: cur.toUpperCase(),
-    options
-  })), prev), {}), ['post', 'put', 'patch', 'delete', 'options'].reduce((prev, cur) => (prev[cur] = ({
-    name,
-    meta,
-    url,
-    body,
-    options,
-    type
-  }) => request(Object.assign({}, opts, {
-    url,
-    type,
-    options,
-    method: cur.toUpperCase(),
-    data: body
-  })), prev), {}));
+  return ['get', 'head', 'post', 'put', 'patch', 'delete', 'options'].reduce((prev, cur) => (prev[cur] = createRequest(_extends({}, opts, {
+    method: cur.toUpperCase()
+  })), prev), {});
 }
 
 export default index;

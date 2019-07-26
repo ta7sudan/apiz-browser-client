@@ -64,7 +64,7 @@
     "@babel/polyfill": "^7.2.5",
     "@babel/preset-env": "^7.3.4",
     "@babel/register": "^7.0.0",
-    "apiz-ng": "^4.0.0",
+    "apiz-ng": "^4.0.1",
     "babel-plugin-array-includes": "^2.0.3",
     "conventional-changelog-cli": "^2.0.12",
     "cz-conventional-changelog": "^2.1.0",
@@ -86,7 +86,7 @@
     "typescript": "^3.5.3"
   },
   "dependencies": {
-    "tinyjx": "^3.1.1",
+    "tinyjx": "^3.1.2",
     "tslib": "^1.9.3"
   },
   "config": {

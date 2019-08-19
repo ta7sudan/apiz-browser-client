@@ -13,9 +13,9 @@ export type APIzClientInstance = APIzClient<AjaxOptions, APIzClientType, any, HT
 export { AjaxOptions as APIzRawRequestOptions };
 
 export interface APIzClientConstructorOptions {
-	beforeSend?: (xhr: XMLHttpRequest) => void | boolean,
-	afterResponse?: (resData: any, status: string, xhr: XMLHttpRequest, url: string, reqData: any) => void,
-	error?: (errType: string, err: Error, data: any, xhr: XMLHttpRequest) => void,
+	beforeSend?: (options: AjaxOptions) => void | boolean,
+	afterResponse?: (resData: any, status: 'success' | 'error', xhr: XMLHttpRequest, url: string, reqData: any) => void,
+	error?: (errType: 'recoverableError' | 'unrecoverableError', err: Error, data: any, xhr: XMLHttpRequest) => PromiseResult | boolean | undefined,
 	retry?: number
 }
 
@@ -24,6 +24,13 @@ interface APIzClientConstructorOptionsWithMethod extends APIzClientConstructorOp
 }
 
 type Callable = (...args: Array<any>) => any;
+
+interface PromiseResult {
+	data?: any;
+	status?: 'recoverableError' | 'unrecoverableError';
+	xhr: XMLHttpRequest;
+	err?: Error;
+}
 
 const isFn = (f: any): f is Callable => typeof f === 'function';
 
@@ -84,15 +91,15 @@ function createRequest({
 		retry = 0
 	}: APIzClientConstructorOptionsWithMethod
 ): APIzClientRequest<AjaxOptions, APIzClientType, APIzClientMeta> {
-	return function request({
+	return async function request({
 		url,
 		options,
 		body,
 		headers,
 		type,
 		handleError = true
-	}: ClientRequestOptions<AjaxOptions, APIzClientType, APIzClientMeta>): Promise<any> {
-		let $options: AjaxOptions | undefined, count = 0;
+	}: ClientRequestOptions<AjaxOptions, APIzClientType, APIzClientMeta>): Promise<PromiseResult> {
+		let $options: AjaxOptions | undefined;
 		if (options) {
 			$options = {
 				...options,
@@ -109,46 +116,72 @@ function createRequest({
 				headers
 			};
 		}
-		return pRetry(() => {
+
+		if (isFn(beforeSend)) {
+			const rst = await beforeSend($options);
+			if (rst === false) {
+				throw new Error('apiz: cancel');
+			}
+		}
+
+		let result: PromiseResult | undefined, e: PromiseResult | undefined;
+		try {
 			// tslint:disable-next-line
-			return new Promise((rs, rj) => {
+			result = await pRetry<PromiseResult>(() => new Promise((rs, rj) => {
 				ajax({
 					...$options,
-					beforeSend(xhr: XMLHttpRequest): any {
-						if (!count && isFn(beforeSend)) {
-							return beforeSend(xhr);
-						}
-					},
 					success(data: any, xhr: XMLHttpRequest): void {
-						isFn(afterResponse) && count === retry && afterResponse(data, 'success', xhr, url, body);
 						rs({
 							data,
 							xhr
 						});
 					},
 					recoverableError(err: Error, data: any, xhr: XMLHttpRequest): void {
-						isFn(afterResponse) && count === retry && afterResponse(data, 'error', xhr, url, body);
-						isFn(error) && count === retry && handleError && error('recoverableError', err, data, xhr);
 						rj({
-							err,
-							data
+							status: 'recoverableError',
+							data,
+							xhr,
+							err
 						});
 					},
 					unrecoverableError(err: Error, xhr: XMLHttpRequest): void {
-						isFn(error) && count === retry && handleError && error('unrecoverableError', err, undefined, xhr);
 						rj({
-							err,
-							data: undefined
+							status: 'unrecoverableError',
+							data: undefined,
+							xhr,
+							err
 						});
 					}
 				});
+			}), {
+				retry
 			});
-		}, {
-			retry,
-			beforeRetry(): void {
-				++count;
+		} catch ($err) {
+			e = $err;
+		}
+
+		const resData = result && result.data || e && e.data,
+			status = result && !e ? 'success' : 'error',
+			$xhr = result && result.xhr || e && e.xhr;
+		if ((result || e && e.status === 'recoverableError') && isFn(afterResponse)) {
+			await afterResponse(resData, status, $xhr!, url, body);
+		}
+
+		if (e) {
+			let recoverable: PromiseResult | boolean | undefined = false;
+			if (isFn(error) && handleError) {
+				recoverable = await error(e.status!, e.err!, e.data, e.xhr);
 			}
-		});
+			// 返回false, 不可恢复
+			if (recoverable === false || recoverable === undefined) {
+				throw e;
+			// 有非undefined的返回值, 可以恢复, 返回值作为结果
+			} else {
+				return recoverable as PromiseResult;
+			}
+		} else {
+			return result!;
+		}
 	};
 }
 

@@ -67,7 +67,7 @@ function createRequest({
   error,
   retry = 0
 }) {
-  return function request({
+  return async function request({
     url,
     options,
     body,
@@ -75,8 +75,7 @@ function createRequest({
     type,
     handleError = true
   }) {
-    let $options,
-        count = 0;
+    let $options;
 
     if (options) {
       $options = _extends({}, options, {
@@ -94,18 +93,21 @@ function createRequest({
       };
     }
 
-    return pRetry(() => {
-      // tslint:disable-next-line
-      return new Promise((rs, rj) => {
-        ajax(_extends({}, $options, {
-          beforeSend(xhr) {
-            if (!count && isFn(beforeSend)) {
-              return beforeSend(xhr);
-            }
-          },
+    if (isFn(beforeSend)) {
+      const rst = await beforeSend($options);
 
+      if (rst === false) {
+        throw new Error('apiz: cancel');
+      }
+    }
+
+    let result, e;
+
+    try {
+      // tslint:disable-next-line
+      result = await pRetry(() => new Promise((rs, rj) => {
+        ajax(_extends({}, $options, {
           success(data, xhr) {
-            isFn(afterResponse) && count === retry && afterResponse(data, 'success', xhr, url, body);
             rs({
               data,
               xhr
@@ -113,32 +115,55 @@ function createRequest({
           },
 
           recoverableError(err, data, xhr) {
-            isFn(afterResponse) && count === retry && afterResponse(data, 'error', xhr, url, body);
-            isFn(error) && count === retry && handleError && error('recoverableError', err, data, xhr);
             rj({
-              err,
-              data
+              status: 'recoverableError',
+              data,
+              xhr,
+              err
             });
           },
 
           unrecoverableError(err, xhr) {
-            isFn(error) && count === retry && handleError && error('unrecoverableError', err, undefined, xhr);
             rj({
-              err,
-              data: undefined
+              status: 'unrecoverableError',
+              data: undefined,
+              xhr,
+              err
             });
           }
 
         }));
+      }), {
+        retry
       });
-    }, {
-      retry,
+    } catch ($err) {
+      e = $err;
+    }
 
-      beforeRetry() {
-        ++count;
+    const resData = result && result.data || e && e.data,
+          status = result && !e ? 'success' : 'error',
+          $xhr = result && result.xhr || e && e.xhr;
+
+    if ((result || e && e.status === 'recoverableError') && isFn(afterResponse)) {
+      await afterResponse(resData, status, $xhr, url, body);
+    }
+
+    if (e) {
+      let recoverable = false;
+
+      if (isFn(error) && handleError) {
+        recoverable = await error(e.status, e.err, e.data, e.xhr);
+      } // 返回false, 不可恢复
+
+
+      if (recoverable === false || recoverable === undefined) {
+        throw e; // 有非undefined的返回值, 可以恢复, 返回值作为结果
+      } else {
+        return recoverable;
       }
-
-    });
+    } else {
+      return result;
+    }
   };
 }
 /**

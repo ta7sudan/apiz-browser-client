@@ -174,7 +174,7 @@ function createRequest({
 			}
 			// 返回false, 不可恢复
 			if (recoverable === false || recoverable === undefined) {
-				throw e;
+				throw new Error(`Error: ${e.err!.message}, URL: ${url}, Method: ${method}`);
 			// 有非undefined的返回值, 可以恢复, 返回值作为结果
 			} else {
 				return recoverable as PromiseResult;

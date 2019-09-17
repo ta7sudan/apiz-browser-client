@@ -95,7 +95,7 @@ function createRequest({
 		url,
 		options,
 		body,
-		headers,
+		headers = {},
 		type,
 		handleError = true
 	}: ClientRequestOptions<AjaxOptions, APIzClientType, APIzClientMeta>): Promise<PromiseResult> {

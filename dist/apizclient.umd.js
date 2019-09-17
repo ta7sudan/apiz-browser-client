@@ -75,7 +75,7 @@
       url,
       options,
       body,
-      headers,
+      headers = {},
       type,
       handleError = true
     }) {
